@@ -1,9 +1,4 @@
----
-title: "StormData"
-output:
-  html_document:
-    keep_md: yes
----
+# StormData
 #Weather events effect on health and economic problems in USA from 1950 to 2011
 
 ##Synopsis
@@ -17,18 +12,47 @@ Data was downloaded from [this link](https://d396qusza40orc.cloudfront.net/repda
 
 The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.
 
-```{r, results='hide' , cache=TRUE}
+
+```r
 remoteFile <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 localZipFile <- "repdata%2Fdata%2FStormData.csv.bz2"
 download.file(remoteFile, destfile = localZipFile, mode="wb", method="curl")
 data <- read.csv("repdata%2Fdata%2FStormData.csv.bz2")
 ```
 Dpyr package was used
-```{r, results='hide'}
+
+```r
 library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
 library(ggplot2)
+```
+
+```
+## Warning: package 'ggplot2' was built under R version 3.1.3
+```
+
+```r
 library(tidyr)
 library(gridExtra)
+```
+
+```
+## Loading required package: grid
 ```
 data$EVTYPE <- as.factor(toupper(data$EVTYPE))
 
@@ -37,7 +61,8 @@ data$EVTYPE <- as.factor(toupper(data$EVTYPE))
 ###Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
 
 First the data is grouped by the type of event EVTYPE and then the sum and mean of fatalities and injuries are calculated. Then the data is rearrange to only show one observation per event.
-```{r}
+
+```r
 EV_Health <- data %>% 
   group_by(EVTYPE) %>%
   summarise(Fatalities_sum = sum(FATALITIES, na.rm = TRUE), 
@@ -52,7 +77,8 @@ EV_Health <- data %>%
 
 Sum and mean of fatalities and injuries is rank in descending order
 
-```{r}
+
+```r
 t1 <- EV_Health %>% 
   filter(healthCq == "Fatalities") %>%
   arrange(desc(sum), EVTYPE)
@@ -68,7 +94,8 @@ t4 <- EV_Health %>%
 ```
 
 Here are the plots for only the first 5 events in the ranked tables
-```{r}
+
+```r
 p1 <- ggplot(data = t1[1:5,], aes(x = EVTYPE, y = sum )) + 
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -91,9 +118,14 @@ p4 <- ggplot(data = t4[1:5,], aes(x = EVTYPE, y = mean )) +
 
 grid.arrange(p1, p2, ncol=2)
 ```
-```{r}
+
+![](Analysis_files/figure-html/unnamed-chunk-5-1.png) 
+
+```r
 grid.arrange(p3, p4, ncol=2)
 ```
+
+![](Analysis_files/figure-html/unnamed-chunk-6-1.png) 
 
 The most harmful weather event to population health is Tornado.It is cause for both the highest fatalities and the highest injuries across United States.
 
@@ -101,17 +133,20 @@ The most harmful weather event to population health is Tornado.It is cause for b
 
 First step is isolate the columns involved in the analysis for economic damage
 
-```{r}
+
+```r
 EV_Dmg <- data %>%
   select(EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
 ```
 Then a table was created to represent the values of the exponents 
-```{r}
+
+```r
 ExpVal <- data.frame(EXP = c("", "-", "+", "?", "0", "1", "2", "3", "4", "5", "6", "7", "8", "B", "k", "K", "m", "M", "h", "H"), 
           VALUE = c( 0 ,0 ,0 ,0 ,1 ,1 , 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1000, 1000, 1000000, 1000000, 100, 100))
 ```
 Values for exponents were replaced and 2 new columns created showing the real value for crop and property damage
-```{r}
+
+```r
 # loop replacing values with ExpVal
 for(i in 1:nrow(ExpVal)){
   levels(EV_Dmg$PROPDMGEXP)[levels(EV_Dmg$PROPDMGEXP)==ExpVal$EXP[i]] <- ExpVal$VALUE[i]
@@ -123,7 +158,8 @@ EV_Dmg<-mutate(EV_Dmg, CROPDMGVAL = CROPDMG*as.numeric(as.character(CROPDMGEXP))
 ```
 
 Table for the sum of damanges grouped by Event type
-```{r}
+
+```r
 EV_Dmg<- EV_Dmg %>%
   group_by(EVTYPE) %>%
   summarise(Property_sum = sum(PROPDMGVAL, na.rm = TRUE),  
@@ -133,7 +169,8 @@ EV_Dmg<- EV_Dmg %>%
   spread(summType, value)
 ```
 Sum and mean of crop and property damange and is ranked in descending order
-```{r}
+
+```r
 t5 <- EV_Dmg %>% 
   filter(DMG == "Crop") %>%
   arrange(desc(sum), EVTYPE)
@@ -142,7 +179,8 @@ t6 <- EV_Dmg %>%
   arrange(desc(sum))
 ```
 Here are the plots for only the first 5 events in the ranked tables
-```{r}
+
+```r
 p5 <- ggplot(data = t5[1:5,], aes(x = EVTYPE, y = sum )) + 
   geom_bar(stat = "identity") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -155,5 +193,7 @@ p6 <- ggplot(data = t6[1:5,], aes(x = EVTYPE, y = sum )) +
 
 grid.arrange(p5, p6, ncol=2)
 ```
+
+![](Analysis_files/figure-html/unnamed-chunk-12-1.png) 
 
 Drought caused more economic damage to crops and Flood caused more property damage
